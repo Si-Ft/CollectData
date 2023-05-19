@@ -24,6 +24,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -111,6 +113,25 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // OK를 눌렀을 경우에 행동할 내용들
+                        int totDelete = delete(targetPos);
+
+                        // DB 업로드 시 스캔 결과 정렬
+                        Comparator<ScanResult> comparator = new Comparator<ScanResult>() {
+                            @Override
+                            public int compare(ScanResult o1, ScanResult o2) {
+                                return o2.level - o1.level;
+                            }
+                        };
+                        Collections.sort(wifiResult, comparator);
+                        int count = 0;
+                        for (ScanResult choseWifi : wifiResult) {
+                            if (count >= 7) break;
+                            count += 1;
+                            insert(choseWifi.BSSID, choseWifi.level, targetPos);
+                        }
+
+                        Toast.makeText(MainActivity.this, totDelete + "행 데이터 제거, " + count + "행 데이터 추가", Toast.LENGTH_SHORT).show();
+                        //
                     }
                 });
                 myAlertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -123,6 +144,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
     //===========================================
     //=========== SQLite DB 명령어 영역 ===========
     //===========================================
@@ -137,9 +160,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 현재 위치에 등록된 정보를 전부 삭제 (DB 업로드 시 delete 후 insert)
-    private void delete(String pos) {
+    private int delete(String pos) {
         db = dbHelper.getWritableDatabase();
-        db.delete("fingerprint", "pos=?", new String[]{pos});
+        int deleteRows = db.delete("fingerprint", "pos=?", new String[]{pos});
+        return deleteRows;
     }
 
 
@@ -153,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         String mac, dbm, freq;
         for (ScanResult choseWifi : wifiResult) {
             mac = choseWifi.BSSID;
-            dbm = Integer.toString(choseWifi.level);
+            dbm = Integer.toString(choseWifi.level) + "dBm";
             freq = Integer.toString(choseWifi.frequency);
 
             String completeInfo = mac + " | " + dbm + " | " + freq;
