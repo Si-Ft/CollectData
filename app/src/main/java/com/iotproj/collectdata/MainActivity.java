@@ -23,6 +23,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -60,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
         wifiList = findViewById(R.id.wifiList);
         wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
+        copyDatabaseFromAssets();
         dbHelper = new NewSQLiteOpenHelper(MainActivity.this, "person.db", null, 1);
 
         // 시스템에서 각종 변경 정보를 인식했을 때, 그 중에서도 Wifi 스캔 값이 변경되었을 경우 동작
@@ -145,6 +150,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //존재하는 DB 복사하기
+    private void copyDatabaseFromAssets() {
+        try {
+            InputStream inputStream = getAssets().open("person.db");
+            String outFileName = getDatabasePath("person.db").getPath();
+            OutputStream outputStream = new FileOutputStream(outFileName);
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
+            }
+
+            outputStream.flush();
+            outputStream.close();
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     //===========================================
     //=========== SQLite DB 명령어 영역 ===========
